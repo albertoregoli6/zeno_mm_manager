@@ -1,0 +1,31 @@
+<?xml version="1.0"?>
+<package>
+  <name>zeno_mission_manager</name>
+  <version>1.0.0</version>
+  <description>The zeno mission manager ros package</description>
+
+  <maintainer email="matteo.bresciani@dii.unipi.it">Bresciani Matteo</maintainer>
+
+  <license>TODO</license>
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <build_depend>message_generation</build_depend>
+  <run_depend>message_runtime</run_depend>
+
+  <build_depend>std_msgs</build_depend>
+  <run_depend>std_msgs</run_depend>
+
+  <!-- package containing zeno msgs-->
+  <build_depend>marta_msgs</build_depend>
+  <run_depend>marta_msgs</run_depend>
+
+
+  <build_depend>geometry_msgs</build_depend>
+  <run_depend>geometry_msgs</run_depend>
+
+  
+  <build_depend>sensor_msgs</build_depend>
+  <run_depend>sensor_msgs</run_depend>
+
+</package>

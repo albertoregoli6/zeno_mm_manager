@@ -1,0 +1,11 @@
+<launch>
+  <!-- zeno MISSION PARSER -->
+  <group ns="zeno">
+    <!-- This param is /mission_list by default. It represents the path HOME/repository where the missions are saved.-->
+    <!-- <rosparam param = "/yaml_mission_folder" > "/home/matteobresciani/Scrivania/MEDUSA/Lotto_3"  </rosparam> -->
+    <!-- <rosparam param = "/proprietary_mission_folder" > "/home/matteobresciani/mission_list/MEDUSA"  </rosparam> -->
+    <node respawn="true" pkg="zeno_mission_manager" type="zeno_mission_manager"  name="zeno_mission_manager"  output="screen"/>	    
+    <!-- <node respawn="true" pkg="zeno_mission_manager" type="zeno_mission_manager_from_file.py"  name="zeno_mission_manager_from_file"  output="screen"/> -->
+  </group>
+
+</launch>

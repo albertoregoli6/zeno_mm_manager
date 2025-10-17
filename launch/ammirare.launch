@@ -1,0 +1,10 @@
+<launch>
+
+    <rosparam file="$(find zeno_mission_manager)/config/params.yaml" />
+    <node name="plot" pkg="zeno_mission_manager" type="plot.py" output="screen" />
+    <node name="ammirare" pkg="zeno_mission_manager" type="ammirare.py" output="screen" />
+  <group ns="zeno">
+    <node respawn="true" pkg="zeno_mission_manager" type="zeno_mission_manager"  name="zeno_mission_manager"  output="screen"/>	        
+  </group>
+
+</launch>

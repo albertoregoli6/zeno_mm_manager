@@ -1,0 +1,15 @@
+# Parametri missione waypoint
+
+# Sistemi di riferimento
+Olocal: [0, 0, 0] # orgine LOCAL espressa in NED
+
+alpha_rot: 0 # angolo tra NED e LOCAL
+
+# Vertici area di sicurezza in ll (disposti in senso antiorario)
+A0 : [44.30860516, 9.20994515]
+A1 : [44.30903674, 9.21039664]
+A2 : [44.30842356, 9.21121364]
+A3 : [44.30850271, 9.21001197]
+
+# Passo transetti in metri
+step: 3
