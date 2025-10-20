@@ -1,15 +1,22 @@
-# Parametri missione waypoint
-
-# Sistemi di riferimento
-Olocal: [0, 0, 0] # orgine LOCAL espressa in NED
-
-alpha_rot: 0 # angolo tra NED e LOCAL
-
 # Vertici area di sicurezza in ll (disposti in senso antiorario)
 A0 : [44.30860516, 9.20994515]
 A1 : [44.30903674, 9.21039664]
 A2 : [44.30842356, 9.21121364]
 A3 : [44.30850271, 9.21001197]
 
+json_dir: "/home/alberto/zeno_ws/src/zeno_mission_manager/json"
+
+# Parametri missione transetti - go_to_waypoint
+
+# Sistema di riferimento locale per costruzione dei transetti
+Olocal: [0, 0, 0]           # orgine LOCAL espressa in NED
+alpha_rot: 0                # angolo tra NED e LOCAL
+
 # Passo transetti in metri
 step: 3
+
+# Costruzione waypoint
+depth: 0.0
+speed: 0.5 # m/s
+control_mode: "depth"
+altitude: 0.0
