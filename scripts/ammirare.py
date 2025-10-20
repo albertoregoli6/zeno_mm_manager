@@ -127,16 +127,18 @@ class planning:
                                 self.w_trajectory.append(f.waypointLocal2LL(e,self.C_lo2ne,NED_origin))
 
                     self.wayList = f.waypointsList(self.w_trajectory)    # definizione del messaggio di waypoint
+                    self.bool_new_json = False
                                 
                 if self.statusZeno == "IDLE" and self.wayList:
                     self.pubUploadMission.publish(self.wayList)          # pubblicazione lista di waypoint per passare dallo stato IDLE a READY
 
                 # condizione utile ad avviare la missione su Zeno aspettando che lo stato sia READY: lo stato diventera poi RUNNING
                 if self.statusZeno == "READY":
-                    self.wayList = []
+                    self.w_trajectory = []
+                    self.wayList      = []
                     self.pubStartMission.publish(self.Mission)
 
-                if self.statusZeno == "COMPLETED":
+                if self.statusZeno == "COMPLETED" and self.wayList:
                     self.pubDeleteMission.publish(self.Mission)
 
             self.rate.sleep()
