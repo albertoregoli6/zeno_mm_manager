@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import rospy
+import os,glob
 import numpy as np
 import math
 import json
@@ -47,7 +48,6 @@ def waypointLocal2LL(w_local,C_lo2ne,NED_origin):
 
 # funzione che restituisce il messaggio corretto per i waypoints
 def waypoints(w_ned2ll):
-    print(w_ned2ll)
     # way e il waypoint i-esimo presente nel messaggio Waypoint() che viene pubblicato durante la missione
     way = Waypoint() 
     way.position.latitude  = w_ned2ll[0]
@@ -522,23 +522,57 @@ def read_points_from_json(json_file):
     except Exception as e:
         raise ValueError("Errore nel parsing JSON: " + str(e))
 
-    points = []
-    tipo = "go_to_waypoint"
+    all_points = []
+    all_types = []
 
     try:
-        for area in j["areas"]:
-            # Determina tipo
+        for area in j.get("areas", []):
+            # tipo (default)
+            tipo = "point"
             if "type" in area and area["type"] == "area":
                 tipo = "transetti"
+            elif "type" in area and area["type"] not in ["", None]:
+                tipo = str(area["type"])  # qualunque altro tipo rimane così com’è
 
-            # Estrai punti
-            for p in area["points"]:
-                pt = [p["lat"], p["lon"], 0]
-                points.append(pt)
+            # punti
+            points = []
+            for p in area.get("points", []):
+                lat = p.get("lat")
+                lon = p.get("lon")
+                if lat is None or lon is None:
+                    raise ValueError("Punto non valido nel JSON: %s" % str(p))
+                points.append([lat, lon, 0])
+
+            # aggiungi alle liste globali
+            all_points.append(points)
+            all_types.append(tipo)
+
     except Exception as e:
         raise ValueError("Errore durante la lettura dei punti: " + str(e))
-    
-    return points, tipo
+
+    return all_points, all_types
+
+def check_and_read_new_json(json_dir, current_json=None, current_mtime=0.0, force=False):
+    # trova il più recente
+    pattern = os.path.join(json_dir, "*.json")
+    files = [p for p in glob.glob(pattern)
+             if os.path.isfile(p) and not os.path.basename(p).startswith('.')]
+    if not files:
+        return None, None, current_json, current_mtime, False
+
+    newest = max(files, key=lambda p: os.path.getmtime(p))
+    mtime = os.path.getmtime(newest)
+
+    changed = (force or current_json != newest or mtime > current_mtime)
+
+    if not changed:
+        return None, None, current_json, current_mtime, False
+
+    # leggi il json
+    WP, mission = read_points_from_json(newest)
+
+    rospy.loginfo("Caricato nuovo JSON: %s (mtime=%.0f)" % (newest, mtime))
+    return WP, mission, newest, mtime, True
 
 ###################################################################
 ########################## PRINT MISSIONE #########################
@@ -565,14 +599,15 @@ def plot_mission(A, w_trajectory, WP, latLongVector, mission):
         ax.plot(xA + [xA[0]], yA + [yA[0]], '-', label='A (area)', linewidth=1.6)
         ax.scatter(xA, yA, s=20, zorder=3)
 
-    # --- WP in blu: chiuso se mission == "transetti" ---
-    if WP is not None and len(WP) > 0:
-        xW, yW = xy(WP)
-        if mission == "transetti":
-            ax.plot(xW + [xW[0]], yW + [yW[0]], '-', label='WP (chiuso)', linewidth=1.6)
-        else:
-            ax.plot(xW, yW, '-', label='WP', linewidth=1.6)
-        ax.scatter(xW, yW, s=20, zorder=3)
+    for i in range(len(mission)):
+        # --- WP in blu: chiuso se mission == "transetti" ---
+        if WP[i] is not None and len(WP[i]) > 0:
+            xW, yW = xy(WP[i])
+            if mission[i] == "transetti":
+                ax.plot(xW + [xW[0]], yW + [yW[0]], '-', label='WP transetti', linewidth=1.6)
+            else:
+                ax.plot(xW, yW, '-', label='WP', linewidth=1.6)
+            ax.scatter(xW, yW, s=20, zorder=3)
 
     # --- w_trajectory in verde: traiettoria (non chiusa) ---
     if w_trajectory is not None and len(w_trajectory) > 0:
