@@ -15,9 +15,13 @@ import geodetic_functions
 # IMPORT PARAMETRI #
 ####################
 
-Olocal    = np.array(rospy.get_param("/Olocal")) # origine terna LOCAL in NED
-alpha_rot = rospy.get_param("/alpha_rot") # angolo fra NED e local
-step      = rospy.get_param("/step") # spaziatura transetti
+Olocal       = np.array(rospy.get_param("/Olocal"))        # origine terna LOCAL in NED
+alpha_rot    = rospy.get_param("/alpha_rot")               # angolo fra NED e local
+step         = rospy.get_param("/step")                    # spaziatura transetti
+depth        = rospy.get_param("/depth")                   # profondità dei waypoint
+speed        = rospy.get_param("/speed")                   # velocità robot [m/s]
+control_mode = rospy.get_param("/control_mode")            # modalità di controllo
+altitude     = rospy.get_param("/altitude")                # altitudine  
 
 ##################
 # FUNZIONI UTILI #
@@ -46,12 +50,12 @@ def waypoints(w_ned2ll):
     print(w_ned2ll)
     # way e il waypoint i-esimo presente nel messaggio Waypoint() che viene pubblicato durante la missione
     way = Waypoint() 
-    way.position.latitude = w_ned2ll[0]
+    way.position.latitude  = w_ned2ll[0]
     way.position.longitude = w_ned2ll[1]
-    way.position.depth = 0.0
-    way.speed = 0.5 # m/s
-    way.control_mode = "depth"
-    way.altitude = 0.0
+    way.position.depth     = depth
+    way.speed              = speed 
+    way.control_mode       = control_mode
+    way.altitude           = altitude
     return way
 
 # funzione che ci restituisce i waypoint in terna ll (da terna local), prendendo in ingresso il vettore dei waypoints che il robot deve raggiungere 
@@ -341,9 +345,6 @@ def intersect_line_with_segment(m_t, q_t, p1, p2, eps=1e-12):
 
 def transetti(w_local):
 
-    #rospy.logwarn("=== INIZIO TRANSETTI ===")
-    #rospy.logwarn("Input w_local: {}".format(w_local))
-
     # Trova l'indice dell'origine [0,0,0] in w_local
     idx0 = 0
     for i in range(len(w_local)):
@@ -371,14 +372,10 @@ def transetti(w_local):
         m = (y2 - y1) / (x2 - x1)
         q = y1 - m * x1
         retta_transetti.extend([m, q])
-        #rospy.logwarn("Retta principale: m={} | q={}".format(m, q))
     else:
         m = float('inf')   # retta verticale: x = x1
         q = None
         retta_transetti.append(m)
-        #rospy.logwarn("Retta principale: verticale (x = {})".format(x1))
-
-    #print("---------------------------------------")
 
     # Punto più lontano dalla retta dei transetti
     max_dist = -1.0
@@ -387,12 +384,11 @@ def transetti(w_local):
         denom = math.sqrt(m*m + 1.0)
         for i, p in enumerate(w_local):
             xi, yi = float(p[0]), float(p[1])
-            d = abs(m*xi - yi + q) / denom   # distanza punto-retta (forma implicita)
+            d = abs(m*xi - yi + q) / denom
             if d > max_dist:
                 max_dist = d
                 idx_max  = i
     else:
-        # retta verticale: distanza = |x - x1|
         for i, p in enumerate(w_local):
             xi = float(p[0])
             d = abs(xi - x1)
@@ -402,8 +398,6 @@ def transetti(w_local):
 
     # Numero dei transetti
     num_transetti = int(math.ceil(max_dist / float(step))) + 1 if max_dist > 0 else 1
-    #rospy.logwarn("Numero transetti (n_lm): {}, distanza max {}".format(num_transetti, max_dist))
-    #print("---------------------------------------")
 
     # Direzione di sviluppo dei transetti
     if m != float('inf'):
@@ -412,14 +406,11 @@ def transetti(w_local):
     else:
         direction_factor = 1 if w_local[idx_max][0] >= q else -1
 
-    #rospy.logwarn("direction_factor: {}".format(direction_factor))
-    #print("---------------------------------------")
-
     # Calcolo delle rette parallele distanziate di 'step' e tutte dallo stesso lato del punto idx_max
     transetti = []
 
     if m != float('inf'):
-        transetti.append([m, q + 0.5*step])  # prima retta: quella trovata traslata di 0.5*step
+        transetti.append([m, q + 0.5*step])  # prima retta
 
         # Incremento in direzione perpendicolare
         dq = float(step) * math.sqrt(m*m + 1.0)
@@ -434,9 +425,6 @@ def transetti(w_local):
         for i in range(1, num_transetti):
             new_x = x0 + direction_factor * i * float(step)
             transetti.append([float('inf'), new_x])
-
-    #rospy.logwarn("Rette generate (m, q|x0): {}".format(transetti))
-    #print("---------------------------------------")
 
     # Segmenti che delimitano l'area di lavoro
     edges = []
@@ -469,9 +457,6 @@ def transetti(w_local):
         for pt in x_list:
             w_trajectory.append([pt[0], pt[1], pt[2]])
 
-    #rospy.logwarn("Waypoints transetti grezzi: {}".format(w_trajectory))
-    #print("---------------------------------------")
-
     # Corretto impilamento dei waypoint per i transetti
     if len(w_trajectory) >= 3:
         # Calcola distanze dal primo punto
@@ -498,10 +483,6 @@ def transetti(w_local):
             new_traj.extend(chunk)
 
         w_trajectory = new_traj
-
-    #rospy.logwarn("Waypoints transetti FINAL: {}".format(w_trajectory))
-    
-    #rospy.logwarn("=== FINE TRANSETTI ===")
 
     return w_trajectory 
 
