@@ -28,25 +28,25 @@ altitude     = rospy.get_param("/altitude")                # altitudine
 # FUNZIONI UTILI #
 ##################
 
-# funzione che restituisce la matrice di rotazione C_ne2lo da NED a Local
+# Matrice di rotazione tra terna NED e terna Locale
 def matrixNED2Local(alpha_rot): 
     C_ne2lo = [[math.cos(alpha_rot), math.sin(alpha_rot), 0],[-math.sin(alpha_rot), math.cos(alpha_rot), 0],[0, 0, 1]]
     return C_ne2lo
 
-# funzione che restituisce il punto in terna Local dato il punto in terna ECEF
+# Trasformazione posizione punto da ECEF a terna Local
 def positionLocal(latLongVector,C_ne2lo,NED_origin):
     P_ll2ned = np.array(geodetic_functions.lld2ned(NED_origin,latLongVector))  
     P_local = np.dot(C_ne2lo, P_ll2ned) - np.dot(C_ne2lo, Olocal)
     return P_local.tolist()
 
-# funzione che dato un waypoint in terna local, restituisce in componenti in terna ECEF: [latitudine,longitudine]
+# Trasformazione posizione punto da terna Local a LL
 def waypointLocal2LL(w_local,C_lo2ne,NED_origin):
     w_ned = np.array(np.dot(C_lo2ne,w_local) + Olocal) 
     W_ned2ll = np.array(geodetic_functions.ned2lld(NED_origin,w_ned)) 
     # w_ned2ll: punto nella terna ECEF del waypoint
     return W_ned2ll
 
-# funzione che restituisce il messaggio corretto per i waypoints
+# Funzione per costruzione messaggio ROS Waypoint
 def waypoints(w_ned2ll):
     # way e il waypoint i-esimo presente nel messaggio Waypoint() che viene pubblicato durante la missione
     way = Waypoint() 
@@ -58,9 +58,7 @@ def waypoints(w_ned2ll):
     way.altitude           = altitude
     return way
 
-# funzione che ci restituisce i waypoint in terna ll (da terna local), prendendo in ingresso il vettore dei waypoints che il robot deve raggiungere 
-# in terna local (w_trajectory). Tale funzione produce la lista dei waypoints in terna ll da inserire nel messaggio WaypoinList.
-# Inoltre necessita della matrice di rotazione tra la terna local e la terna ned.
+# Funzione per costruzione messaggio ROS waypointList
 def waypointsList(w_trajectory):
     wayList = WaypointList()
     for i in w_trajectory:
@@ -70,68 +68,15 @@ def waypointsList(w_trajectory):
     return wayList
 
 ###################################################################
-####################### ALGORITMO DIAGONALI #######################
-###################################################################
-
-# funzione usata per trovare il vertice piu vicino da cui partire. In ingresso necessita del vettore dei vertici dell'area di lavoro in componente in terna local 
-# e del vettore posizione del robot in terna local
-def min_distance(vertices,P_local):
-    d = []
-    # per ogni vertice viene calcolata la distanza dello stesso dal robot e si definisce l'indice (min_index) che permette di estrarre il vertice a distanza minima dal robot
-    for i in vertices:
-        d.append(math.sqrt((P_local[0]-i[0])**2 + (P_local[1]-i[1])**2))
-    min_index = d.index(min(d))
-    print(min_index)
-    return min_index
-
-# la funzione produce la lista dei waypoints ordinati in terna local per tutti gli scenari possibili, ovvero
-# al variare del primo waypoint [way1], definito come il vertice piu vicino a Zeno al tempo zero. 
-# w_localTotal e il vettore dei waypoint in terna local utilizzati per la fase di esplorazione
-def switch(way1, w_localTotal):
-    w_trajectory = []
-    if np.all(way1 == w_localTotal[0]):
-        w_trajectory = [w_localTotal[0], w_localTotal[2], w_localTotal[3], w_localTotal[1], w_localTotal[4], w_localTotal[7], w_localTotal[6], w_localTotal[5], w_localTotal[4]]
-    elif np.all(way1 == w_localTotal[1]):
-        w_trajectory = [w_localTotal[1], w_localTotal[3], w_localTotal[2],  w_localTotal[0], w_localTotal[4], w_localTotal[5], w_localTotal[6], w_localTotal[7], w_localTotal[4]]
-    elif np.all(way1 == w_localTotal[2]):
-        w_trajectory = [w_localTotal[2], w_localTotal[0], w_localTotal[1], w_localTotal[3], w_localTotal[6], w_localTotal[5], w_localTotal[4], w_localTotal[7], w_localTotal[6]]
-    elif np.all(way1 == w_localTotal[3]):
-        w_trajectory = [w_localTotal[3], w_localTotal[1], w_localTotal[0], w_localTotal[2], w_localTotal[6], w_localTotal[7], w_localTotal[4], w_localTotal[5], w_localTotal[6]]
-    return np.array(w_trajectory)
-
-def diagonali(w_local,P_local):
-    # definizione waypoint in terna local
-    # waypoint per la costruzione della clessidra
-    w_local_0 = w_local[0]                                             # waypoint 0 in terna local
-    w_local_1 = w_local[1]                                             # waypoint 1 in terna local
-    w_local_2 = w_local[2]                                             # waypoint 2 in terna local
-    w_local_3 = w_local[3]                                             # waypoint 3 in terna local
-
-    # waypoint per la costruzione del rombo (rotazione antioraria)
-    # waypoint in terna local posizionati nel punto medio dei lati del poligono dell'area di navigazione 
-    w_local_4 = 0.5*(w_local_0 + w_local_1) 
-    w_local_5 = 0.5*(w_local_1 + w_local_2)
-    w_local_6 = 0.5*(w_local_2 + w_local_3)
-    w_local_7 = 0.5*(w_local_3 + w_local_0)
-
-    # costruzione vettore di waypoint
-    w_localTotal = [w_local_0, w_local_1, w_local_2,w_local_3, w_local_4, w_local_5, w_local_6, w_local_7] # qui ci vanno tutti i waypoint
-
-    # funzione che viene eseguita una sola volta per trovare il vertice iniziale piu vicino 
-    minIndex     = min_distance(w_localTotal[0:4], P_local)
-    way1         = w_localTotal[minIndex]                               # primo waypoint in cui si posiziona il robot
-    w_trajectory = switch(way1, w_localTotal)                           # funzione switch: per scegliere lo scenario iniziale di navigazione
-    return minIndex, w_trajectory
-
-###################################################################
 ####################### ALGORITMO TRANSETTI #######################
 ###################################################################
 
+# Funzione per ordinare i punti in senso antiorario
 def points_counterclockwise(points):
     lats = [p[0] for p in points]
     lons = [p[1] for p in points]
 
-    # calcola il centroide
+    # Calcol del centroide
     centroid_lat = sum(lats) / len(points)
     centroid_lon = sum(lons) / len(points)
 
@@ -140,11 +85,12 @@ def points_counterclockwise(points):
         lat, lon = point[0], point[1]
         return math.atan2(lat - centroid_lat, lon - centroid_lon)
 
-    # ordina i punti in base all'angolo (antiorario)
+    # Ordinamento dei punti in base all'angolo (antiorario)
     sorted_points = sorted(points, key=angle_from_centroid, reverse=False)
 
     return sorted_points
 
+# Funzione per controllare presenza o no di intersezioni tra rette e segmenti
 def seg_intersection(ax, ay, bx, by, cx, cy, dx, dy):
     den = (bx - ax) * (dy - cy) - (by - ay) * (dx - cx)
     if abs(den) < 1e-12:
@@ -166,12 +112,18 @@ def interp_depth(d1, d2, t):
         return None
 
 def add_unique_intersection(L, lat, lon, dep):
-    """Evita duplicati numerici di intersezioni (tangenti/vertici)."""
     for q in L:
         if abs(q[0] - lat) < 1e-10 and abs(q[1] - lon) < 1e-10:
             return
     L.append((lat, lon, dep))
 
+def add_unique(pt_list, x, y, z=0.0, tol=1e-10):
+    for px, py, pz in pt_list:
+        if abs(px - x) < tol and abs(py - y) < tol:
+            return
+    pt_list.append((x, y, z))
+
+# Funzione per controllare se punto è dentro poligono (safety area)
 def filter_points_in_safety_area(points, safety_area, mission):
     n = len(safety_area)
 
@@ -276,33 +228,12 @@ def filter_points_in_safety_area(points, safety_area, mission):
 
     return [list(v) for v in inside_points]
 
-def is_point_inside_polygon(x, y, area_lines):
-    intersections = 0
-
-    for m_a, q_a in area_lines:
-        # Metodo del raggio per determinare se dentro
-        if m_a == float('inf'):  
-            x_line = q_a
-            if x < x_line:
-                intersections += 1
-        else:
-            x_intersect = (y - q_a) / m_a if m_a != 0 else None
-            if x_intersect is not None and x <= x_intersect:
-                intersections += 1
-
-    return intersections % 2 == 1
-
-def add_unique(pt_list, x, y, z=0.0, tol=1e-10):
-    for px, py, pz in pt_list:
-        if abs(px - x) < tol and abs(py - y) < tol:
-            return
-    pt_list.append((x, y, z))
-
+# Funzione per calcolare intersezione tra rette e segmenti
 def intersect_line_with_segment(m_t, q_t, p1, p2, eps=1e-12):
     x1, y1 = float(p1[0]), float(p1[1])
     x2, y2 = float(p2[0]), float(p2[1])
 
-    # Segmento verticale?
+    # Segmento verticale
     seg_vertical = abs(x2 - x1) <= eps
 
     if m_t == float('inf'):
@@ -343,6 +274,7 @@ def intersect_line_with_segment(m_t, q_t, p1, p2, eps=1e-12):
         return (True, x, y)
     return (False, 0.0, 0.0)
 
+# Funzione per creare i waypoint per i transetti
 def transetti(w_local):
 
     # Trova l'indice dell'origine [0,0,0] in w_local
@@ -364,7 +296,7 @@ def transetti(w_local):
     # Scegli il punto con distanza maggiore e ottieni l'indice
     idx_2_min = idx_prev if dist_prev >= dist_next else idx_next
 
-    # Calcolo del coefficiente angolare e dell intercetta
+    # Calcolo del coefficiente angolare e dell intercetta tra origine e punto a distanza maggiore
     retta_transetti =[]
     x1, y1 = w_local[idx0][0], w_local[idx0][1]
     x2, y2 = w_local[idx_2_min][0], w_local[idx_2_min][1]
@@ -377,7 +309,7 @@ def transetti(w_local):
         q = None
         retta_transetti.append(m)
 
-    # Punto più lontano dalla retta dei transetti
+    # Punto più lontano dalla retta dei transetti per sapere numero di transetti
     max_dist = -1.0
     idx_max  = 0
     if m != float('inf'):
@@ -410,7 +342,7 @@ def transetti(w_local):
     transetti = []
 
     if m != float('inf'):
-        transetti.append([m, q + 0.5*step])  # prima retta
+        transetti.append([m, q + 0.5*step])  # prima retta è spostata di 0.5*step
 
         # Incremento in direzione perpendicolare
         dq = float(step) * math.sqrt(m*m + 1.0)
@@ -436,7 +368,7 @@ def transetti(w_local):
             x2, y2 = float(w_local[0][0]),  float(w_local[0][1])
         edges.append([[x1, y1], [x2, y2]])
 
-    # Calcolo waypoint dei transetti (prendere anche i waypoint iniziali del bordo all'inizio)
+    # Calcolo waypoint dei transetti
     w_trajectory = []
     w_trajectory.append(w_local[idx0])
 
@@ -463,15 +395,12 @@ def transetti(w_local):
         d1 = math.sqrt((w_trajectory[1][0]-w_trajectory[0][0])**2 + (w_trajectory[1][1]-w_trajectory[0][1])**2 + (w_trajectory[1][2]-w_trajectory[0][2])**2)
         d2 = math.sqrt((w_trajectory[2][0]-w_trajectory[0][0])**2 + (w_trajectory[2][1]-w_trajectory[0][1])**2 + (w_trajectory[2][2]-w_trajectory[0][2])**2)
 
-        # Copia iniziale
         w_traj_mod = w_trajectory[:]
 
-        # Se il terzo è più vicino, inverti le coppie da indice 1 in poi
         if d2 < d1:
             for i in range(1, len(w_traj_mod) - 1, 2):
                 w_traj_mod[i], w_traj_mod[i + 1] = w_traj_mod[i + 1], w_traj_mod[i]
 
-        # Ora genera la serpentina
         new_traj = [w_traj_mod[0]]
         tail = w_traj_mod[1:]
 
@@ -490,29 +419,8 @@ def transetti(w_local):
 ######################### LETTURA DEL JSON ########################
 ###################################################################
 
+# Funzione per leggere un file .json
 def read_points_from_json(json_file):
-    """
-    Legge un file JSON con la struttura:
-    {
-        "areas": [
-            {
-                "type": "area" (opzionale),
-                "points": [
-                    {"lat": ..., "lon": ...},
-                    ...
-                ]
-            },
-            ...
-        ]
-    }
-
-    Output:
-        (points, tipo)
-        dove:
-            - points è una lista di [lat, lon, 0]
-            - tipo è 'go_to_waypoint' se type non esiste o non è 'area',
-              altrimenti 'transetti'
-    """
     if not json_file or not os.path.isfile(json_file):
         raise IOError("File non trovato: " + str(json_file))
 
@@ -527,7 +435,7 @@ def read_points_from_json(json_file):
 
     try:
         for area in j.get("areas", []):
-            # tipo (default)
+            # tipo
             tipo = "point"
             if "type" in area and area["type"] == "area":
                 tipo = "transetti"
@@ -552,6 +460,7 @@ def read_points_from_json(json_file):
 
     return all_points, all_types
 
+# Funzione per controllare la presenza di un nuovo file .json e lettura
 def check_and_read_new_json(json_dir, current_json=None, current_mtime=0.0, force=False):
     # trova il più recente
     pattern = os.path.join(json_dir, "*.json")
@@ -568,7 +477,7 @@ def check_and_read_new_json(json_dir, current_json=None, current_mtime=0.0, forc
     if not changed:
         return None, None, current_json, current_mtime, False
 
-    # leggi il json
+    # Lettura json
     WP, mission = read_points_from_json(newest)
 
     rospy.loginfo("Caricato nuovo JSON: %s (mtime=%.0f)" % (newest, mtime))
@@ -578,29 +487,27 @@ def check_and_read_new_json(json_dir, current_json=None, current_mtime=0.0, forc
 ########################## PRINT MISSIONE #########################
 ###################################################################
 
+# Funzione per plottare la missione
 def plot_mission(A, w_trajectory, WP, latLongVector, mission):
-    """
-    A, w_trajectory, WP, latLongVector: liste di punti [lat, lon]
-    mission: se "transetti" chiude l'area dei WP in blu
-    """
+    # Punto 2d
     def xy(seq):
         xs = [float(p[1]) for p in seq]  # x=lon
         ys = [float(p[0]) for p in seq]  # y=lat
         return xs, ys
 
-    # Pulisci la figura corrente e ridisegna (modalità interattiva attiva in __init__)
+    # Pulisci la figura corrente e ridisegna
     fig = plt.gcf()
     fig.clf()
     ax = fig.add_subplot(111)
 
-    # --- A in rosso: poligono chiuso ---
+    # Plot safety area
     if A is not None and len(A) > 0:
         xA, yA = xy(A)
         ax.plot(xA + [xA[0]], yA + [yA[0]], '-', label='A (area)', linewidth=1.6)
         ax.scatter(xA, yA, s=20, zorder=3)
 
+    # Plot waypoint dati dal file .json
     for i in range(len(mission)):
-        # --- WP in blu: chiuso se mission == "transetti" ---
         if WP[i] is not None and len(WP[i]) > 0:
             xW, yW = xy(WP[i])
             if mission[i] == "transetti":
@@ -609,13 +516,13 @@ def plot_mission(A, w_trajectory, WP, latLongVector, mission):
                 ax.plot(xW, yW, '-', label='WP', linewidth=1.6)
             ax.scatter(xW, yW, s=20, zorder=3)
 
-    # --- w_trajectory in verde: traiettoria (non chiusa) ---
+    # Plot traiettoria che farà Zeno
     if w_trajectory is not None and len(w_trajectory) > 0:
         xT, yT = xy(w_trajectory)
         ax.plot(xT, yT, '-', label='w_trajectory', linewidth=1.6)
         ax.scatter(xT, yT, s=20, zorder=3)
 
-    # --- latLongVector in giallo (punto corrente Zeno) ---
+    # Plot posizione Zeno
     if latLongVector is not None and len(latLongVector) > 0:
         xL, yL = xy(latLongVector)   # atteso [[lat,lon]]
         ax.plot(xL, yL, '-', label='ZENO', linewidth=1.6)
