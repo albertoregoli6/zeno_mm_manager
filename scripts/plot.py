@@ -20,9 +20,9 @@ A2 = np.array(rospy.get_param("/A2"))
 A3 = np.array(rospy.get_param("/A3"))
 A  = np.array([A0, A1, A2, A3])
 
-####################
-#  CLASSE PLANNING #
-####################
+#################
+#  CLASSE PLOT  #
+#################
 
 class plot:
 
@@ -48,10 +48,10 @@ class plot:
 
     def run(self):
         while not rospy.is_shutdown():
-            # Converte A in lista di liste per il plot
+            # Lista vertici safety area
             A_list = A[:, :2].tolist() if isinstance(A, np.ndarray) else A
 
-            # Plot zeno
+            # Posizione lat-long di Zeno
             if isinstance(self.latLongVector, np.ndarray) and self.latLongVector.size >= 2:
                 zeno_point = [[float(self.latLongVector[0]), float(self.latLongVector[1])]]
             elif isinstance(self.latLongVector, (list, tuple)) and len(self.latLongVector) >= 2:
@@ -64,24 +64,28 @@ class plot:
             self.force = False
 
             if self.bool_new_json:
-                self.WP = WP
-                self.mission = mission
+                self.WP            = WP
+                self.mission       = mission
                 self.bool_new_json = False
 
+            # Creazione del plot
             f.plot_mission(A_list,self.waypoint_list,self.WP,zeno_point,self.mission)
 
             self.rate.sleep()
 
-    # ================== CALLBACKS ==================
+    ##########################################
+                  # CALLBACK #
+    ##########################################
 
+    # Callback relativa al Nav_Status
     def callback_pose(self, navStatus_msg):
-        # posizione robot in LLD
+        # posizione robot in LL
         latitude    = navStatus_msg.position.latitude
         longitude   = navStatus_msg.position.longitude
         self.latLongVector = np.array([latitude, longitude], dtype=float)
 
+    # Callback waypoint pubblicati a Zeno
     def waypoint_callback(self, waypoint_msg):
-        # estrai solo lat/lon in [[lat,lon], ...]
         pts = []
         for wp in waypoint_msg.waypoint_list:
             if hasattr(wp, 'position'):
