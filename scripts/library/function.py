@@ -518,6 +518,8 @@ def plot_mission(A, w_trajectory, WP, latLongVector, mission):
     # Plot traiettoria che farà Zeno
     if w_trajectory is not None and len(w_trajectory) > 0:
         xT, yT = xy(w_trajectory)
+        xT = [xT[-1]] + xT[:-1]
+        yT = [yT[-1]] + yT[:-1]
         ax.plot(xT, yT, '-', label='w_trajectory', linewidth=1.6)
         ax.scatter(xT, yT, s=20, zorder=3)
 
