@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html>
+<head>
+    
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+    <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.3/dist/leaflet.js"></script>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Leaflet.awesome-markers/2.0.2/leaflet.awesome-markers.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.3/dist/leaflet.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/css/bootstrap.min.css"/>
+    <link rel="stylesheet" href="https://netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap-glyphicons.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.2.0/css/all.min.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/Leaflet.awesome-markers/2.0.2/leaflet.awesome-markers.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/python-visualization/folium/folium/templates/leaflet.awesome.rotate.min.css"/>
+    
+            <meta name="viewport" content="width=device-width,
+                initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+            <style>
+                #map_a0361fdb3cad035efbf302569552dff0 {
+                    position: relative;
+                    width: 100.0%;
+                    height: 100.0%;
+                    left: 0.0%;
+                    top: 0.0%;
+                }
+                .leaflet-container { font-size: 1rem; }
+            </style>
+
+            <style>html, body {
+                width: 100%;
+                height: 100%;
+                margin: 0;
+                padding: 0;
+            }
+            </style>
+
+            <style>#map {
+                position:absolute;
+                top:0;
+                bottom:0;
+                right:0;
+                left:0;
+                }
+            </style>
+
+            <script>
+                L_NO_TOUCH = false;
+                L_DISABLE_3D = false;
+            </script>
+
+        
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.2/leaflet.draw.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.2/leaflet.draw.css"/>
+</head>
+<body>
+    
+    
+<script>
+// Apri WebSocket verso il server Python
+
+// Modificare questa riga con l'indirizzo voluto 
+
+var socket = new WebSocket("ws://localhost:8765");
+
+
+function inviaMarkers() {
+    var drawn = null;
+    for (var k in window) {
+        if (k.startsWith('drawnItems_draw_control_')) {
+            drawn = window[k];
+            break;
+        }
+    }
+    if (drawn) {
+        var coords = [];
+        drawn.eachLayer(function(layer) {
+            if (layer instanceof L.Marker) {
+                coords.push(layer.getLatLng());
+            }
+        });
+        if (coords.length > 0) {
+            socket.send(JSON.stringify(coords));
+            console.log("📤 Inviati marker via WebSocket:", coords);
+        } else {
+            console.log("❌ Nessun marker da inviare");
+        }
+    }
+}
+
+// Pulsante per inviare marker
+var btn = document.createElement("button");
+btn.innerHTML = "Invia Marker via WS";
+btn.style.position = "absolute";
+btn.style.top = "10px";
+btn.style.left = "80px";
+btn.style.zIndex = 1000;
+btn.onclick = inviaMarkers;
+document.body.appendChild(btn);
+</script>
+    
+            <div class="folium-map" id="map_a0361fdb3cad035efbf302569552dff0" ></div>
+        
+    
+            
+        
+</body>
+<script>
+    
+    
+            var map_a0361fdb3cad035efbf302569552dff0 = L.map(
+                "map_a0361fdb3cad035efbf302569552dff0",
+                {
+                    center: [41.9, 12.5],
+                    crs: L.CRS.EPSG3857,
+                    ...{
+  "zoom": 13,
+  "zoomControl": true,
+  "preferCanvas": false,
+}
+
+                }
+            );
+
+            
+
+        
+    
+            var tile_layer_f6d9c48ec04e51dd47cd311aceeb4506 = L.tileLayer(
+                "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+                {
+  "minZoom": 0,
+  "maxZoom": 19,
+  "maxNativeZoom": 19,
+  "noWrap": false,
+  "attribution": "\u0026copy; \u003ca href=\"https://www.openstreetmap.org/copyright\"\u003eOpenStreetMap\u003c/a\u003e contributors",
+  "subdomains": "abc",
+  "detectRetina": false,
+  "tms": false,
+  "opacity": 1,
+}
+
+            );
+        
+    
+            tile_layer_f6d9c48ec04e51dd47cd311aceeb4506.addTo(map_a0361fdb3cad035efbf302569552dff0);
+        
+    
+            var options = {
+              position: "topleft",
+              draw: {"circle": false, "circlemarker": false, "marker": true, "polygon": false, "polyline": false, "rectangle": false},
+              edit: {},
+            }
+                // FeatureGroup is to store editable layers.
+                var drawnItems_draw_control_43b3244dae9f356e555ed8a723c02d4f =
+                    new L.featureGroup().addTo(
+                        map_a0361fdb3cad035efbf302569552dff0
+                    );
+
+            options.edit.featureGroup = drawnItems_draw_control_43b3244dae9f356e555ed8a723c02d4f;
+            var draw_control_43b3244dae9f356e555ed8a723c02d4f = new L.Control.Draw(
+                options
+            ).addTo( map_a0361fdb3cad035efbf302569552dff0 );
+            map_a0361fdb3cad035efbf302569552dff0.on(L.Draw.Event.CREATED, function(e) {
+                var layer = e.layer,
+                    type = e.layerType;
+                var coords = JSON.stringify(layer.toGeoJSON());
+                layer.on('click', function() {
+                    alert(coords);
+                    console.log(coords);
+                });
+                drawnItems_draw_control_43b3244dae9f356e555ed8a723c02d4f.addLayer(layer);
+            });
+            map_a0361fdb3cad035efbf302569552dff0.on('draw:created', function(e) {
+                drawnItems_draw_control_43b3244dae9f356e555ed8a723c02d4f.addLayer(e.layer);
+            });
+
+            
+        
+</script>
+</html>

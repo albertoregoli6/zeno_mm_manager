@@ -1,0 +1,54 @@
+{
+  "areas": [
+    {
+      "id": "area-001",
+      "photo_name": "scoglio_regina.jpg",
+      "points": [
+        {
+          "lat": 43.540349,
+          "lon": 10.296320
+        }
+      ]
+    },
+    {
+      "id": "area-002",
+      "photo_name": "scoglio_regina.jpg",
+      "points": [
+        {
+          "lat": 43.541081, 
+          "lon": 10.298602
+        }
+      ]
+    },
+    {
+      "id": "area-003",
+      "photo_name": "scoglio_regina.jpg",
+      "points": [
+        {
+          "lat": 43.539632,
+          "lon": 10.295929
+        }
+      ]
+    },
+    {
+      "id": "area-004",
+      "photo_name": "scoglio_regina.jpg",
+      "points": [
+        {
+          "lat": 43.540349,
+          "lon": 10.296320
+        }
+      ]
+    },
+    {
+      "id": "area-005",
+      "photo_name": "scoglio_regina.jpg",
+      "points": [
+        {
+          "lat": 43.541050, 
+          "lon": 10.298693
+        }
+      ]
+    }
+  ]
+}
