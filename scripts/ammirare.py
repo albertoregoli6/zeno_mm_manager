@@ -73,7 +73,6 @@ class planning:
 
         self.C_ne2lo = np.array(f.matrixNED2Local(alpha_rot))   # matrice di rotazione NED2Local
         self.C_lo2ne = np.transpose(self.C_ne2lo)               # matrice di rotazione local2NED
-        self.first_mission = True
 
         # Lettura json
         self.json_dir      = json_dir                           # path cartella salvataggio dei file .json
@@ -114,10 +113,13 @@ class planning:
                             ordered_WP  = f.points_counterclockwise(self.WP[i]) 
                             filtered_WP = f.filter_points_in_safety_area(ordered_WP, A, self.mission[i])
 
+                            # Punto piu vicino per costruzione transetti
+                            nearest_point = self.w_trajectory[-1] if self.w_trajectory else self.latLongVector
+
                             # Calcolo dei transetti
                             dist_lld = []
                             for i in filtered_WP:
-                                dist_lld.append(g.lld2distance(self.latLongVector, i))
+                                dist_lld.append(g.lld2distance(nearest_point, i))
                             min_index_lld = dist_lld.index(min(dist_lld))
                             NED_origin = filtered_WP[min_index_lld]
                             
@@ -141,8 +143,12 @@ class planning:
 
                 # Pubblicazione del messaggio vuoto per passare da READY a RUNNING
                 if self.statusZeno == "READY":
-                    self.w_trajectory = []
-                    self.wayList      = []
+                    self.w_local            = []
+                    self.w_trajectory_local = []
+                    self.w_trajectory       = []
+                    self.wayList            = []
+                    self.WP                 = []
+                    self.mission            = []
                     self.pubStartMission.publish(self.Mission)
 
                 # Pubblicazione del messaggio vuoto per passare da COMPLETED a IDLE se presente un nuovo file .json
