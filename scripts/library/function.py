@@ -64,7 +64,7 @@ def waypointsList(w_trajectory):
     for i in w_trajectory:
         way = waypoints(i)
         wayList.waypoint_list.append(way)
-        print("waypoint: {}".format(i))
+        print("waypoint: [{:.10f}, {:.10f}, {:.10f}]".format(float(i[0]), float(i[1]), float(i[2])))
     return wayList
 
 ###################################################################
@@ -480,7 +480,6 @@ def check_and_read_new_json(json_dir, current_json=None, current_mtime=0.0, forc
     # Lettura json
     WP, mission = read_points_from_json(newest)
 
-    rospy.loginfo("Caricato nuovo JSON: %s (mtime=%.0f)" % (newest, mtime))
     return WP, mission, newest, mtime, True
 
 ###################################################################
