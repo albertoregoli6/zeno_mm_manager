@@ -68,7 +68,8 @@ class planning:
         self.mission            = ''                            # tipo di missione (transetti o point)
 
         self.latLongVector      = []                            # posizione di Zeno (vettore 3d)
-        self.firstNavStatus     = True                          # primo NavStatus ottenuto
+        self.firstNavStatusBool = True                          # check primo NavStatus ottenuto
+        self.firstNavStatus     = []                            # primo NavStatus ottenuto
 
         self.C_ne2lo = np.array(f.matrixNED2Local(alpha_rot))   # matrice di rotazione NED2Local
         self.C_lo2ne = np.transpose(self.C_ne2lo)               # matrice di rotazione local2NED
@@ -88,7 +89,7 @@ class planning:
     def run(self):
         while not rospy.is_shutdown():
 
-            if not self.firstNavStatus:
+            if not self.firstNavStatusBool:
 
                 # Check nuovo json
                 self.WP, self.mission, self.json, self.time, self.bool_new_json = f.check_and_read_new_json(self.json_dir, self.json, self.time, self.force)
@@ -96,12 +97,12 @@ class planning:
 
                 # Calcolo dei waypoint della missione
                 if self.bool_new_json:
-
+                    rospy.loginfo("Caricato nuovo JSON: %s (mtime=%.0f)" % (self.json, self.time))
                     print("-----------------")
                     for i in range(len(self.mission)):
                         print("Missione: ", self.mission[i], self.WP[i])
                     print("-----------------")
-                        
+    
                     # Costruzione waypoint (per il caso point e per i transetti)
                     for i in range(len(self.mission)):
                         if self.mission[i] == "point":   
@@ -119,7 +120,7 @@ class planning:
                                 dist_lld.append(g.lld2distance(self.latLongVector, i))
                             min_index_lld = dist_lld.index(min(dist_lld))
                             NED_origin = filtered_WP[min_index_lld]
-
+                            
                             for i in filtered_WP:
                                 w_local_i = f.positionLocal(i,self.C_ne2lo,NED_origin)
                                 self.w_local.append(w_local_i)
@@ -127,6 +128,8 @@ class planning:
                             self.w_trajectory_local = f.transetti(self.w_local)
                             for e in self.w_trajectory_local:
                                 self.w_trajectory.append(f.waypointLocal2LL(e,self.C_lo2ne,NED_origin))
+                            
+                    self.w_trajectory.append(self.firstNavStatus)
 
                     # Definizione del messaggio ROS 
                     self.wayList = f.waypointsList(self.w_trajectory)
@@ -161,8 +164,9 @@ class planning:
         self.orientation   = navStatus_msg.orientation.yaw                            # orientazione NED
         self.latLongVector = np.array([latitude, longitudine, altitude])              # composizione delle 3 variabili in terna LL
 
-        if self.firstNavStatus:
-            self.firstNavStatus = False
+        if self.firstNavStatusBool:
+            self.firstNavStatusBool = False
+            self.firstNavStatus     = [self.latLongVector[0], self.latLongVector[1], 0]
             print("PRIMO GPS")
 
     # Callback dello stato di missione di Zeno:
