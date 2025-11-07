@@ -4,7 +4,7 @@ A1 : [44.30903674, 9.21039664]
 A2 : [44.30842356, 9.21121364]
 A3 : [44.30850271, 9.21001197]
 
-json_dir: "/home/alberto/zeno_ws/src/zeno_mission_manager/json/prova"
+json_dir: "/home/alberto/zeno_ws/src/zeno_mission_manager/json"
 
 # Parametri missione transetti - go_to_waypoint
 

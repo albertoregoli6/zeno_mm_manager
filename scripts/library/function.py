@@ -506,14 +506,15 @@ def plot_mission(A, w_trajectory, WP, latLongVector, mission):
         ax.scatter(xA, yA, s=20, zorder=3)
 
     # Plot waypoint dati dal file .json
-    for i in range(len(mission)):
-        if WP[i] is not None and len(WP[i]) > 0:
-            xW, yW = xy(WP[i])
-            if mission[i] == "transetti":
-                ax.plot(xW + [xW[0]], yW + [yW[0]], '-', label='WP transetti', linewidth=1.6)
-            else:
-                ax.plot(xW, yW, '-', label='WP', linewidth=1.6)
-            ax.scatter(xW, yW, s=20, zorder=3)
+    if len(mission) > 0:
+        for i in range(len(mission)):
+            if WP[i] is not None and len(WP[i]) > 0:
+                xW, yW = xy(WP[i])
+                if mission[i] == "transetti":
+                    ax.plot(xW + [xW[0]], yW + [yW[0]], '-', label='WP transetti', linewidth=1.6)
+                else:
+                    ax.plot(xW, yW, '-', label='WP', linewidth=1.6)
+                ax.scatter(xW, yW, s=20, zorder=3)
 
     # Plot traiettoria che farà Zeno
     if w_trajectory is not None and len(w_trajectory) > 0:

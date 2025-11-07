@@ -67,6 +67,9 @@ class plot:
                 self.WP            = WP
                 self.mission       = mission
                 self.bool_new_json = False
+            else:
+                self.WP = []
+                self.mission = []
 
             # Creazione del plot
             f.plot_mission(A_list,self.waypoint_list,self.WP,zeno_point,self.mission)
