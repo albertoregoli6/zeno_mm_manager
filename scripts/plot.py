@@ -36,15 +36,15 @@ class plot:
         plt.ion()
 
         self.rate          = rospy.Rate(2)
-        self.latLongVector = []              
-        self.waypoint_list = []     
+        self.latLongVector = []                                 # Posizione lat-long di Zeno
+        self.waypoint_list = []                                 # Lista dei waypoint pubblicati della missione a Zeno
 
         # Lettura json
-        self.json_dir      = json_dir
-        self.json          = None
-        self.time          = 0.0
-        self.bool_new_json = False
-        self.force         = True         
+        self.json_dir      = json_dir                           # path cartella salvataggio dei file .json
+        self.json          = None                               # nome del file .json
+        self.time          = 0.0                                # tempo per check nuovi file .json
+        self.bool_new_json = False                              # booleano per indicare presenza o no di un nuovo file .json
+        self.force         = True                               # variabile per inizializzare il check dei nuovi file .json           
 
     def run(self):
         while not rospy.is_shutdown():

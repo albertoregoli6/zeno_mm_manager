@@ -8,7 +8,7 @@ import os
 SAVE_DIR = "/home/alberto/zeno_ws/src/zeno_mission_manager/json/"
 os.makedirs(SAVE_DIR, exist_ok=True)
 
-
+# Funzione principale del client WebSocket per ricevere messaggi e salvarli come file JSON
 async def client():
     uri = "ws://192.168.25.11:8765"  # change to your server IP if remote
     async with websockets.connect(uri) as websocket:
